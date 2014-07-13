@@ -4,17 +4,21 @@ package com.example.cam;
  * @author Jose Davis Nidhin
  */
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.ShutterCallback;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
@@ -25,13 +29,13 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.Toast;
 
 public class CamTestActivity extends Activity {
 	private static final String TAG = "CamTestActivity";
 	Preview preview;
 	Button buttonClick;
 	Camera camera;
-	String fileName;
 	Activity act;
 	Context ctx;
 
@@ -46,37 +50,46 @@ public class CamTestActivity extends Activity {
 		setContentView(R.layout.main);
 		
 		preview = new Preview(this, (SurfaceView)findViewById(R.id.surfaceView));
-		preview.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
-		((FrameLayout) findViewById(R.id.preview)).addView(preview);
+		preview.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+		((FrameLayout) findViewById(R.id.layout)).addView(preview);
 		preview.setKeepScreenOn(true);
 		
-		buttonClick = (Button) findViewById(R.id.buttonClick);
-		
-		buttonClick.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				//				preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+		preview.setOnLongClickListener(new OnLongClickListener() {
+			public boolean onLongClick(View v) {
 				camera.takePicture(shutterCallback, rawCallback, jpegCallback);
-			}
-		});
-		
-		buttonClick.setOnLongClickListener(new OnLongClickListener(){
-			@Override
-			public boolean onLongClick(View arg0) {
-				camera.autoFocus(new AutoFocusCallback(){
-					@Override
-					public void onAutoFocus(boolean arg0, Camera arg1) {
-						//camera.takePicture(shutterCallback, rawCallback, jpegCallback);
-					}
-				});
 				return true;
 			}
 		});
+		
+		Toast.makeText(ctx, getString(R.string.take_photo_help), Toast.LENGTH_LONG).show();
+		
+//		buttonClick = (Button) findViewById(R.id.btnCapture);
+//		
+//		buttonClick.setOnClickListener(new OnClickListener() {
+//			public void onClick(View v) {
+////				preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+//				camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+//			}
+//		});
+//		
+//		buttonClick.setOnLongClickListener(new OnLongClickListener(){
+//			@Override
+//			public boolean onLongClick(View arg0) {
+//				camera.autoFocus(new AutoFocusCallback(){
+//					@Override
+//					public void onAutoFocus(boolean arg0, Camera arg1) {
+//						//camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+//					}
+//				});
+//				return true;
+//			}
+//		});
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-		//      preview.camera = Camera.open();
+//		preview.camera = Camera.open();
 		camera = Camera.open();
 		camera.startPreview();
 		preview.setCamera(camera);
@@ -97,32 +110,48 @@ public class CamTestActivity extends Activity {
 		camera.startPreview();
 		preview.setCamera(camera);
 	}
+	
+	private void refreshGallery(File file) {
+		Intent mediaScanIntent = new Intent( Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+	    mediaScanIntent.setData(Uri.fromFile(file));
+	    sendBroadcast(mediaScanIntent);
+	}
 
 	ShutterCallback shutterCallback = new ShutterCallback() {
 		public void onShutter() {
-			// Log.d(TAG, "onShutter'd");
+//			 Log.d(TAG, "onShutter'd");
 		}
 	};
 
 	PictureCallback rawCallback = new PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
-			// Log.d(TAG, "onPictureTaken - raw");
+//			 Log.d(TAG, "onPictureTaken - raw");
 		}
 	};
 
 	PictureCallback jpegCallback = new PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
 			FileOutputStream outStream = null;
+
+			// Write to SD Card
 			try {
-				// Write to SD Card
-				fileName = String.format("/sdcard/camtest/%d.jpg", System.currentTimeMillis());
-				outStream = new FileOutputStream(fileName);
+	            File sdCard = Environment.getExternalStorageDirectory();
+	            File dir = new File (sdCard.getAbsolutePath() + "/camtest");
+	            dir.mkdirs();				
+				
+				String fileName = String.format("%d.jpg", System.currentTimeMillis());
+				File outFile = new File(dir, fileName);
+				
+				outStream = new FileOutputStream(outFile);
 				outStream.write(data);
+				outStream.flush();
 				outStream.close();
-				Log.d(TAG, "onPictureTaken - wrote bytes: " + data.length);
+				
+				Log.d(TAG, "onPictureTaken - wrote bytes: " + data.length + " to " + outFile.getAbsolutePath());
 
 				resetCam();
-
+				
+				refreshGallery(outFile);
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
@@ -133,3 +162,5 @@ public class CamTestActivity extends Activity {
 		}
 	};
 }
+
+
