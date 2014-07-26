@@ -13,10 +13,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.hardware.Camera;
-import android.hardware.Camera.AutoFocusCallback;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.ShutterCallback;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -54,13 +54,14 @@ public class CamTestActivity extends Activity {
 		((FrameLayout) findViewById(R.id.layout)).addView(preview);
 		preview.setKeepScreenOn(true);
 		
-		preview.setOnLongClickListener(new OnLongClickListener() {
-			public boolean onLongClick(View v) {
+		preview.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View arg0) {
 				camera.takePicture(shutterCallback, rawCallback, jpegCallback);
-				return true;
 			}
 		});
-		
+
 		Toast.makeText(ctx, getString(R.string.take_photo_help), Toast.LENGTH_LONG).show();
 		
 //		buttonClick = (Button) findViewById(R.id.btnCapture);
@@ -131,6 +132,16 @@ public class CamTestActivity extends Activity {
 
 	PictureCallback jpegCallback = new PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
+			new SaveImageTask().execute(data);
+			resetCam();
+			Log.d(TAG, "onPictureTaken - jpeg");
+		}
+	};
+	
+	private class SaveImageTask extends AsyncTask<byte[], Void, Void> {
+
+		@Override
+		protected Void doInBackground(byte[]... data) {
 			FileOutputStream outStream = null;
 
 			// Write to SD Card
@@ -143,13 +154,11 @@ public class CamTestActivity extends Activity {
 				File outFile = new File(dir, fileName);
 				
 				outStream = new FileOutputStream(outFile);
-				outStream.write(data);
+				outStream.write(data[0]);
 				outStream.flush();
 				outStream.close();
 				
 				Log.d(TAG, "onPictureTaken - wrote bytes: " + data.length + " to " + outFile.getAbsolutePath());
-
-				resetCam();
 				
 				refreshGallery(outFile);
 			} catch (FileNotFoundException e) {
@@ -158,9 +167,10 @@ public class CamTestActivity extends Activity {
 				e.printStackTrace();
 			} finally {
 			}
-			Log.d(TAG, "onPictureTaken - jpeg");
+			return null;
 		}
-	};
+		
+	}
 }
 
 

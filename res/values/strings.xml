@@ -4,6 +4,9 @@
     <string name="hello">Hello World, CamTestActivity!</string>
     <string name="app_name">CameraExample</string>
     
+    <!-- UI Elements -->
+    <string name="btn_capture">Click</string>
+    
     <!-- Toast Messages -->
     <string name="take_photo_help">Touch anywhere on screen to take picture</string>
 
