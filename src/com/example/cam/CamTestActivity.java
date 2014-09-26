@@ -48,12 +48,12 @@ public class CamTestActivity extends Activity {
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 		setContentView(R.layout.main);
-		
+
 		preview = new Preview(this, (SurfaceView)findViewById(R.id.surfaceView));
 		preview.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 		((FrameLayout) findViewById(R.id.layout)).addView(preview);
 		preview.setKeepScreenOn(true);
-		
+
 		preview.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -63,37 +63,43 @@ public class CamTestActivity extends Activity {
 		});
 
 		Toast.makeText(ctx, getString(R.string.take_photo_help), Toast.LENGTH_LONG).show();
-		
-//		buttonClick = (Button) findViewById(R.id.btnCapture);
-//		
-//		buttonClick.setOnClickListener(new OnClickListener() {
-//			public void onClick(View v) {
-////				preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
-//				camera.takePicture(shutterCallback, rawCallback, jpegCallback);
-//			}
-//		});
-//		
-//		buttonClick.setOnLongClickListener(new OnLongClickListener(){
-//			@Override
-//			public boolean onLongClick(View arg0) {
-//				camera.autoFocus(new AutoFocusCallback(){
-//					@Override
-//					public void onAutoFocus(boolean arg0, Camera arg1) {
-//						//camera.takePicture(shutterCallback, rawCallback, jpegCallback);
-//					}
-//				});
-//				return true;
-//			}
-//		});
+
+		//		buttonClick = (Button) findViewById(R.id.btnCapture);
+		//		
+		//		buttonClick.setOnClickListener(new OnClickListener() {
+		//			public void onClick(View v) {
+		////				preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+		//				camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+		//			}
+		//		});
+		//		
+		//		buttonClick.setOnLongClickListener(new OnLongClickListener(){
+		//			@Override
+		//			public boolean onLongClick(View arg0) {
+		//				camera.autoFocus(new AutoFocusCallback(){
+		//					@Override
+		//					public void onAutoFocus(boolean arg0, Camera arg1) {
+		//						//camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+		//					}
+		//				});
+		//				return true;
+		//			}
+		//		});
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-//		preview.camera = Camera.open();
-		camera = Camera.open();
-		camera.startPreview();
-		preview.setCamera(camera);
+		int numCams = Camera.getNumberOfCameras();
+		if(numCams > 0){
+			try{
+				camera = Camera.open(0);
+				camera.startPreview();
+				preview.setCamera(camera);
+			} catch (RuntimeException ex){
+				Toast.makeText(ctx, getString(R.string.camera_not_found), Toast.LENGTH_LONG).show();
+			}
+		}
 	}
 
 	@Override
@@ -111,22 +117,22 @@ public class CamTestActivity extends Activity {
 		camera.startPreview();
 		preview.setCamera(camera);
 	}
-	
+
 	private void refreshGallery(File file) {
 		Intent mediaScanIntent = new Intent( Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-	    mediaScanIntent.setData(Uri.fromFile(file));
-	    sendBroadcast(mediaScanIntent);
+		mediaScanIntent.setData(Uri.fromFile(file));
+		sendBroadcast(mediaScanIntent);
 	}
 
 	ShutterCallback shutterCallback = new ShutterCallback() {
 		public void onShutter() {
-//			 Log.d(TAG, "onShutter'd");
+			//			 Log.d(TAG, "onShutter'd");
 		}
 	};
 
 	PictureCallback rawCallback = new PictureCallback() {
 		public void onPictureTaken(byte[] data, Camera camera) {
-//			 Log.d(TAG, "onPictureTaken - raw");
+			//			 Log.d(TAG, "onPictureTaken - raw");
 		}
 	};
 
@@ -137,7 +143,7 @@ public class CamTestActivity extends Activity {
 			Log.d(TAG, "onPictureTaken - jpeg");
 		}
 	};
-	
+
 	private class SaveImageTask extends AsyncTask<byte[], Void, Void> {
 
 		@Override
@@ -146,20 +152,20 @@ public class CamTestActivity extends Activity {
 
 			// Write to SD Card
 			try {
-	            File sdCard = Environment.getExternalStorageDirectory();
-	            File dir = new File (sdCard.getAbsolutePath() + "/camtest");
-	            dir.mkdirs();				
-				
+				File sdCard = Environment.getExternalStorageDirectory();
+				File dir = new File (sdCard.getAbsolutePath() + "/camtest");
+				dir.mkdirs();				
+
 				String fileName = String.format("%d.jpg", System.currentTimeMillis());
 				File outFile = new File(dir, fileName);
-				
+
 				outStream = new FileOutputStream(outFile);
 				outStream.write(data[0]);
 				outStream.flush();
 				outStream.close();
-				
+
 				Log.d(TAG, "onPictureTaken - wrote bytes: " + data.length + " to " + outFile.getAbsolutePath());
-				
+
 				refreshGallery(outFile);
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -169,7 +175,7 @@ public class CamTestActivity extends Activity {
 			}
 			return null;
 		}
-		
+
 	}
 }
 
