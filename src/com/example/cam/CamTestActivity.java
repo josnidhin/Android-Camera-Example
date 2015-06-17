@@ -4,6 +4,8 @@ package com.example.cam;
  * @author Jose Davis Nidhin
  */
 
+
+//
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -31,6 +33,8 @@ import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+
+//コミットテスト
 public class CamTestActivity extends Activity {
 	private static final String TAG = "CamTestActivity";
 	Preview preview;
